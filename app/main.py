@@ -48,7 +48,6 @@ class Batch(BaseModel):
 app = FastAPI(title="Doorbell battery API")
 ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
-
 @app.get("/model_info")
 def model_info():
     # TODO Mission 2 + 4: return your per-layer table, worked out FROM THE NETWORK (net.net),
@@ -58,8 +57,52 @@ def model_info():
     #  "fits_300kb_sram_f32": true/false, "fits_300kb_sram_int8": true/false}
     # Count only the Linear layers (ReLU has no parameters). Clue: a Linear layer m has
     # m.in_features and m.out_features.
-    return {"layers": [], "total_params": 0}
+    layers = []
+    total_params = 0
+    total_bytes_f32 = 0
+    total_macs = 0
 
+    layer_number = 1
+
+    for layer in net.net:
+        if isinstance(layer, torch.nn.Linear):
+            m = layer.in_features
+            n = layer.out_features
+
+            params = m * n + n
+            bytes_f32 = params * 4
+            macs = m * n
+
+            layers.append({
+                "name": f"linear{layer_number}",
+                "in": m,
+                "out": n,
+                "params": params,
+                "bytes_f32": bytes_f32,
+                "macs": macs
+            })
+
+            total_params += params
+            total_bytes_f32 += bytes_f32
+            total_macs += macs
+
+            layer_number += 1
+
+    total_bytes_int8 = total_params
+    sram_budget = 300 * 1024
+
+    fits_f32 = total_bytes_f32 <= sram_budget
+    fits_int8 = total_bytes_int8 <= sram_budget
+
+    return {
+        "layers": layers,
+        "total_params": total_params,
+        "total_bytes_f32": total_bytes_f32,
+        "total_bytes_int8": total_bytes_int8,
+        "total_macs": total_macs,
+        "fits_300kb_sram_f32": fits_f32,
+        "fits_300kb_sram_int8": fits_int8
+    }
 
 @app.get("/health")
 def health():

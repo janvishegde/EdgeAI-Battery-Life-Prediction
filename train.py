@@ -12,6 +12,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import torch
 
 from app.model import FEATURES, BatteryNet
@@ -26,8 +27,17 @@ hidden = tuple(int(h) for h in a.hidden.split(","))
 df = pd.read_csv(f"data/team_{a.team:02d}_train.csv")
 # TODO Mission 1: find the sensor glitches (plot every column first!) and write a rule that
 # marks them. Say in your report how many you found and why each rule is safe.
-bad = np.zeros(len(df), dtype=bool)
+bad_battery = df["battery_v"] == 0
+bad_temp = df["temp_c"] == -127
+bad_wifi = df["wifi_rssi_dbm"] == 0
+
+bad = bad_battery | bad_temp | bad_wifi
+
+print("Battery glitches:", bad_battery.sum())
+print("Temperature glitches:", bad_temp.sum())
+print("Wi-Fi glitches:", bad_wifi.sum())
 print(f"{len(df)} rows, {bad.sum()} glitch rows dropped")
+
 df = df[~bad]
 
 rng = np.random.default_rng(0)
@@ -36,12 +46,30 @@ val, tr = df.iloc[idx[:n_val]], df.iloc[idx[n_val:]]
 X, y = tr[FEATURES].to_numpy(np.float32), tr.days_left.to_numpy(np.float32)
 Xv, yv = val[FEATURES].to_numpy(np.float32), val.days_left.to_numpy(np.float32)
 # TODO Mission 2: normalisation. Why must mu and sd come from the TRAINING rows only?
-mu, sd = np.zeros(X.shape[1], np.float32), np.ones(X.shape[1], np.float32)
+mu = X.mean(axis=0)
+sd = X.std(axis=0)
 
 mae = lambda p, t: float(np.mean(np.abs(p - t)))
 print(f"baseline (predict the mean): {mae(np.full_like(yv, y.mean()), yv):.2f} days")
 # TODO Mission 1: a straight-line model (linear regression) as the second baseline.
 # Use np.linalg.lstsq on [X, 1]. Print its validation MAE the same way as the line above.
+X_bias = np.column_stack((X, np.ones(len(X))))
+Xv_bias = np.column_stack((Xv, np.ones(len(Xv))))
+
+weights = np.linalg.lstsq(X_bias, y, rcond=None)[0]
+linear_predictions = Xv_bias @ weights
+
+print(f"linear regression: {mae(linear_predictions, yv):.2f} days")
+plt.figure(figsize=(6, 6))
+plt.scatter(yv, linear_predictions, alpha=0.5)
+
+plt.plot([0, 450], [0, 450], "r--")
+plt.xlabel("True days_left")
+plt.ylabel("Predicted days_left")
+plt.title("Linear Regression: Predicted vs True")
+
+plt.savefig("linear_pred_vs_true.png")
+plt.close()
 
 torch.manual_seed(0)
 net = BatteryNet(hidden)
@@ -58,7 +86,11 @@ for ep in range(a.epochs):
         with torch.no_grad():
             print(f"  epoch {ep:4d}  val MAE {mae(net(Xvt).numpy(), yv):.2f} days")
 with torch.no_grad():
+    train_mae = mae(net(Xt).numpy(), y)
     val_mae = mae(net(Xvt).numpy(), yv)
+
+print(f"training MAE:   {train_mae:.2f} days")
+print(f"validation MAE: {val_mae:.2f} days")
 print(f"network {hidden}:            {val_mae:.2f} days")
 
 os.makedirs("model", exist_ok=True)
