@@ -34,11 +34,12 @@ class Reading(BaseModel):
     # Give every field a sensible range, e.g. Field(ge=..., le=...), so a glitch is refused
     # with HTTP 422 instead of being answered with a made-up number. Base the limits on what a
     # real sensor can report, not on your data's min and max: real readings must still get answers.
-    battery_v: float
-    temp_c: float
-    rings_per_day: float
-    wifi_rssi_dbm: float
-    age_months: float
+    battery_v: float = Field(ge=2.5, le=4.5)
+    temp_c: float = Field(ge=-40, le=85)
+    rings_per_day: float = Field(ge=0, le=200)
+    wifi_rssi_dbm: float = Field(ge=-100, le=-20)
+    age_months: float = Field(ge=0, le=120)
+
 
 
 class Batch(BaseModel):
@@ -49,16 +50,55 @@ app = FastAPI(title="Doorbell battery API")
 ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
 
+
 @app.get("/model_info")
 def model_info():
-    # TODO Mission 2 + 4: return your per-layer table, worked out FROM THE NETWORK (net.net),
-    # not typed in by hand, so it stays right if you change the layer sizes. Exactly these keys:
-    # {"layers": [{"name": "linear1", "in": 5, "out": 32, "params": ..., "bytes_f32": ..., "macs": ...}, ...],
-    #  "total_params": ..., "total_bytes_f32": ..., "total_bytes_int8": ..., "total_macs": ...,
-    #  "fits_300kb_sram_f32": true/false, "fits_300kb_sram_int8": true/false}
-    # Count only the Linear layers (ReLU has no parameters). Clue: a Linear layer m has
-    # m.in_features and m.out_features.
-    return {"layers": [], "total_params": 0}
+    layers = []
+
+    total_params = 0
+    total_bytes_f32 = 0
+    total_macs = 0
+
+    linear_count = 0
+
+    for m in net.net:
+        if isinstance(m, torch.nn.Linear):
+            linear_count += 1
+
+            in_features = m.in_features
+            out_features = m.out_features
+
+            params = m.weight.numel() + m.bias.numel()
+            bytes_f32 = params * 4
+            macs = in_features * out_features
+
+            layers.append({
+                "name": f"linear{linear_count}",
+                "in": in_features,
+                "out": out_features,
+                "params": params,
+                "bytes_f32": bytes_f32,
+                "macs": macs
+            })
+
+            total_params += params
+            total_bytes_f32 += bytes_f32
+            total_macs += macs
+
+    total_bytes_int8 = total_params
+
+    sram_limit = 300 * 1024
+
+    return {
+        "layers": layers,
+        "total_params": total_params,
+        "total_bytes_f32": total_bytes_f32,
+        "total_bytes_int8": total_bytes_int8,
+        "total_macs": total_macs,
+        "fits_300kb_sram_f32": total_bytes_f32 <= sram_limit,
+        "fits_300kb_sram_int8": total_bytes_int8 <= sram_limit
+    }
+
 
 
 @app.get("/health")
@@ -77,21 +117,36 @@ async def run(request: Request, schema):
     rows = data.rows if isinstance(data, Batch) else [data]
     # TODO Mission 3: time each of the three stages below the same way "parse" is timed above,
     # storing them as t["normalise"], t["inference"] and t["build"].
+    
+    # 1. Time normalisation
+    t0 = time.perf_counter()
     x = (np.array([[getattr(r, f) for f in FEATURES] for r in rows], np.float32) - MU) / SD
+    t["normalise"] = ms(t0)
+
+    # 2. Time neural network inference
+    t0 = time.perf_counter()
     with torch.no_grad():
         y = net(torch.from_numpy(x)).numpy()
+    t["inference"] = ms(t0)
+
+    # 3. Time response building
+    t0 = time.perf_counter()
     days = [round(float(v), 2) for v in np.maximum(y, 0)]
     body = {"days_left": days if isinstance(data, Batch) else days[0]}
+    t["build"] = ms(t0)
+
     t["server_total"] = ms(t_all)
     body["timings_ms"] = t
     return body
 
 
+
 @app.post("/predict")
-async def predict(request: Request):
+async def predict(request: Request, reading: Reading):
     return await run(request, Reading)
 
 
 @app.post("/predict_batch")
-async def predict_batch(request: Request):
+async def predict_batch(request: Request, batch: Batch):
     return await run(request, Batch)
+
