@@ -65,9 +65,9 @@ class Reading(BaseModel):
     # with HTTP 422 instead of being answered with a made-up number. Base the limits on what a
     # real sensor can report, not on your data's min and max: real readings must still get answers.
     battery_v: float = Field(ge=2.5, le=4.5)
-    temp_c: float = Field(ge=-40, le=85)
+    temp_c: float = Field(ge=-55, le=125)
     rings_per_day: float = Field(ge=0, le=200)
-    wifi_rssi_dbm: float = Field(ge=-100, le=-20)
+    wifi_rssi_dbm: float = Field(ge=-100, le=-1)
     age_months: float = Field(ge=0, le=120)
 
 

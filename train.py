@@ -23,14 +23,18 @@ ap.add_argument("--epochs", type=int, default=1500)
 a = ap.parse_args()
 hidden = tuple(int(h) for h in a.hidden.split(","))
 
-df = pd.read_csv(f"team_{a.team:02d}_train.csv")
+df = pd.read_csv(f"data/team_{a.team:02d}_train.csv")
 # TODO Mission 1: find the sensor glitches (plot every column first!) and write a rule that
 # marks them. Say in your report how many you found and why each rule is safe.
 bad_battery = df["battery_v"] == 0
 bad_temp = df["temp_c"] == -127
 bad_wifi = df["wifi_rssi_dbm"] == 0
+print("Battery glitches:", bad_battery.sum())
+print("Temperature glitches:", bad_temp.sum())
+print("Wi-Fi glitches:", bad_wifi.sum())
 
 bad = bad_battery | bad_temp | bad_wifi
+
 print(f"{len(df)} rows, {bad.sum()} glitch rows dropped")
 df = df[~bad]
 
