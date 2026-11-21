@@ -34,11 +34,11 @@ class Reading(BaseModel):
     # Give every field a sensible range, e.g. Field(ge=..., le=...), so a glitch is refused
     # with HTTP 422 instead of being answered with a made-up number. Base the limits on what a
     # real sensor can report, not on your data's min and max: real readings must still get answers.
-    battery_v: float
-    temp_c: float
-    rings_per_day: float
-    wifi_rssi_dbm: float
-    age_months: float
+    battery_v: float = Field(ge=2.5, le=4.5)
+    temp_c: float = Field(ge=-55, le=125)
+    rings_per_day: float = Field(ge=0, le=200)
+    wifi_rssi_dbm: float = Field(ge=-100, le=-1)
+    age_months: float = Field(ge=0, le=120)
 
 
 class Batch(BaseModel):
@@ -120,17 +120,43 @@ async def run(request: Request, schema):
     rows = data.rows if isinstance(data, Batch) else [data]
     # TODO Mission 3: time each of the three stages below the same way "parse" is timed above,
     # storing them as t["normalise"], t["inference"] and t["build"].
+    rows = data.rows if isinstance(data, Batch) else [data]
+
+    # Normalisation
+    t0 = time.perf_counter()
     x = (np.array([[getattr(r, f) for f in FEATURES] for r in rows], np.float32) - MU) / SD
+    t["normalise"] = ms(t0)
+
+    # Inference
+    t0 = time.perf_counter()
     with torch.no_grad():
         y = net(torch.from_numpy(x)).numpy()
+    t["inference"] = ms(t0)
+
+    # Build response
+    t0 = time.perf_counter()
     days = [round(float(v), 2) for v in np.maximum(y, 0)]
     body = {"days_left": days if isinstance(data, Batch) else days[0]}
+    t["build"] = ms(t0)
+
     t["server_total"] = ms(t_all)
     body["timings_ms"] = t
     return body
 
 
-@app.post("/predict")
+@app.post(
+    "/predict",
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": Reading.model_json_schema()
+                }
+            }
+        }
+    }
+)
 async def predict(request: Request):
     return await run(request, Reading)
 
