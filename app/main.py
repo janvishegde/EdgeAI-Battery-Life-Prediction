@@ -27,6 +27,36 @@ net.eval()
 torch.set_num_threads(1)
 MU, SD = np.array(cfg["mu"], np.float32), np.array(cfg["sd"], np.float32)
 N_PARAMS = sum(p.numel() for p in net.parameters())
+def estimate_width(w):
+    # Architecture: 5 -> w -> w -> 1
+
+    params = w * w + 8 * w + 1
+
+    bytes_f32 = params * 4
+    bytes_int8 = params
+
+    macs = w * w + 6 * w
+
+    # Largest individual hidden-layer activation
+    activation_f32 = w * 4
+    activation_int8 = w
+
+    sram_limit = 300 * 1024
+    psram_limit = 8 * 1024 * 1024
+
+    return {
+        "width": w,
+        "parameters": params,
+        "float32_bytes": bytes_f32,
+        "int8_bytes": bytes_int8,
+        "activation_f32_bytes": activation_f32,
+        "activation_int8_bytes": activation_int8,
+        "fits_sram_f32": bytes_f32 <= sram_limit,
+        "fits_sram_int8": bytes_int8 <= sram_limit,
+        "fits_psram_f32": bytes_f32 <= psram_limit,
+        "fits_psram_int8": bytes_int8 <= psram_limit,
+        "MACs": macs
+    }
 
 
 class Reading(BaseModel):
@@ -86,19 +116,29 @@ def model_info():
             total_macs += macs
 
     total_bytes_int8 = total_params
+    largest_hidden_width = max(cfg["hidden"])
+
+    largest_activation_bytes_f32 = largest_hidden_width * 4
+    largest_activation_bytes_int8 = largest_hidden_width
 
     sram_limit = 300 * 1024
+    width_comparison = [
+    estimate_width(w)
+    for w in [32, 128, 256, 512, 2048]
+]
 
     return {
-        "layers": layers,
-        "total_params": total_params,
-        "total_bytes_f32": total_bytes_f32,
-        "total_bytes_int8": total_bytes_int8,
-        "total_macs": total_macs,
-        "fits_300kb_sram_f32": total_bytes_f32 <= sram_limit,
-        "fits_300kb_sram_int8": total_bytes_int8 <= sram_limit
-    }
-
+    "layers": layers,
+    "total_params": total_params,
+    "total_bytes_f32": total_bytes_f32,
+    "total_bytes_int8": total_bytes_int8,
+    "total_macs": total_macs,
+    "fits_300kb_sram_f32": total_bytes_f32 <= sram_limit,
+    "fits_300kb_sram_int8": total_bytes_int8 <= sram_limit,
+    "largest_activation_bytes_f32": largest_activation_bytes_f32,
+    "largest_activation_bytes_int8": largest_activation_bytes_int8,
+    "width_comparison": width_comparison
+}
 
 
 @app.get("/health")
