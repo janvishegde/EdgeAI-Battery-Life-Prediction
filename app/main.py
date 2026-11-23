@@ -115,7 +115,7 @@ async def run(request: Request, schema):
     try:
         data = schema.model_validate_json(await request.body())
     except ValidationError as e:
-        return JSONResponse(status_code=422, content={"error": "bad reading", "detail": json.loads(e.json())})
+        return JSONResponse(status_code=422, content={"error": "bad reading", "detail": json.loads(e.json(include_input=False, include_url=False))})
     t["parse"] = ms(t0)
     rows = data.rows if isinstance(data, Batch) else [data]
     # TODO Mission 3: time each of the three stages below the same way "parse" is timed above,
