@@ -27,6 +27,36 @@ net.eval()
 torch.set_num_threads(1)
 MU, SD = np.array(cfg["mu"], np.float32), np.array(cfg["sd"], np.float32)
 N_PARAMS = sum(p.numel() for p in net.parameters())
+def estimate_width(w):
+    # Architecture: 5 -> w -> w -> 1
+
+    params = w * w + 8 * w + 1
+
+    bytes_f32 = params * 4
+    bytes_int8 = params
+
+    macs = w * w + 6 * w
+
+    # Largest individual hidden-layer activation
+    activation_f32 = w * 4
+    activation_int8 = w
+
+    sram_limit = 300 * 1024
+    psram_limit = 8 * 1024 * 1024
+
+    return {
+        "width": w,
+        "parameters": params,
+        "float32_bytes": bytes_f32,
+        "int8_bytes": bytes_int8,
+        "activation_f32_bytes": activation_f32,
+        "activation_int8_bytes": activation_int8,
+        "fits_sram_f32": bytes_f32 <= sram_limit,
+        "fits_sram_int8": bytes_int8 <= sram_limit,
+        "fits_psram_f32": bytes_f32 <= psram_limit,
+        "fits_psram_int8": bytes_int8 <= psram_limit,
+        "MACs": macs
+    }
 
 
 class Reading(BaseModel):
@@ -41,6 +71,7 @@ class Reading(BaseModel):
     age_months: float = Field(ge=0, le=120)
 
 
+
 class Batch(BaseModel):
     rows: list[Reading] = Field(min_length=1, max_length=10000)
 
@@ -48,35 +79,33 @@ class Batch(BaseModel):
 app = FastAPI(title="Doorbell battery API")
 ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
+
+
 @app.get("/model_info")
 def model_info():
-    # TODO Mission 2 + 4: return your per-layer table, worked out FROM THE NETWORK (net.net),
-    # not typed in by hand, so it stays right if you change the layer sizes. Exactly these keys:
-    # {"layers": [{"name": "linear1", "in": 5, "out": 32, "params": ..., "bytes_f32": ..., "macs": ...}, ...],
-    #  "total_params": ..., "total_bytes_f32": ..., "total_bytes_int8": ..., "total_macs": ...,
-    #  "fits_300kb_sram_f32": true/false, "fits_300kb_sram_int8": true/false}
-    # Count only the Linear layers (ReLU has no parameters). Clue: a Linear layer m has
-    # m.in_features and m.out_features.
     layers = []
+
     total_params = 0
     total_bytes_f32 = 0
     total_macs = 0
 
-    layer_number = 1
+    linear_count = 0
 
-    for layer in net.net:
-        if isinstance(layer, torch.nn.Linear):
-            m = layer.in_features
-            n = layer.out_features
+    for m in net.net:
+        if isinstance(m, torch.nn.Linear):
+            linear_count += 1
 
-            params = m * n + n
+            in_features = m.in_features
+            out_features = m.out_features
+
+            params = m.weight.numel() + m.bias.numel()
             bytes_f32 = params * 4
-            macs = m * n
+            macs = in_features * out_features
 
             layers.append({
-                "name": f"linear{layer_number}",
-                "in": m,
-                "out": n,
+                "name": f"linear{linear_count}",
+                "in": in_features,
+                "out": out_features,
                 "params": params,
                 "bytes_f32": bytes_f32,
                 "macs": macs
@@ -86,23 +115,31 @@ def model_info():
             total_bytes_f32 += bytes_f32
             total_macs += macs
 
-            layer_number += 1
-
     total_bytes_int8 = total_params
-    sram_budget = 300 * 1024
+    largest_hidden_width = max(cfg["hidden"])
 
-    fits_f32 = total_bytes_f32 <= sram_budget
-    fits_int8 = total_bytes_int8 <= sram_budget
+    largest_activation_bytes_f32 = largest_hidden_width * 4
+    largest_activation_bytes_int8 = largest_hidden_width
+
+    sram_limit = 300 * 1024
+    width_comparison = [
+    estimate_width(w)
+    for w in [32, 128, 256, 512, 2048]
+]
 
     return {
-        "layers": layers,
-        "total_params": total_params,
-        "total_bytes_f32": total_bytes_f32,
-        "total_bytes_int8": total_bytes_int8,
-        "total_macs": total_macs,
-        "fits_300kb_sram_f32": fits_f32,
-        "fits_300kb_sram_int8": fits_int8
-    }
+    "layers": layers,
+    "total_params": total_params,
+    "total_bytes_f32": total_bytes_f32,
+    "total_bytes_int8": total_bytes_int8,
+    "total_macs": total_macs,
+    "fits_300kb_sram_f32": total_bytes_f32 <= sram_limit,
+    "fits_300kb_sram_int8": total_bytes_int8 <= sram_limit,
+    "largest_activation_bytes_f32": largest_activation_bytes_f32,
+    "largest_activation_bytes_int8": largest_activation_bytes_int8,
+    "width_comparison": width_comparison
+}
+
 
 @app.get("/health")
 def health():
@@ -120,20 +157,19 @@ async def run(request: Request, schema):
     rows = data.rows if isinstance(data, Batch) else [data]
     # TODO Mission 3: time each of the three stages below the same way "parse" is timed above,
     # storing them as t["normalise"], t["inference"] and t["build"].
-    rows = data.rows if isinstance(data, Batch) else [data]
-
-    # Normalisation
+    
+    # 1. Time normalisation
     t0 = time.perf_counter()
     x = (np.array([[getattr(r, f) for f in FEATURES] for r in rows], np.float32) - MU) / SD
     t["normalise"] = ms(t0)
 
-    # Inference
+    # 2. Time neural network inference
     t0 = time.perf_counter()
     with torch.no_grad():
         y = net(torch.from_numpy(x)).numpy()
     t["inference"] = ms(t0)
 
-    # Build response
+    # 3. Time response building
     t0 = time.perf_counter()
     days = [round(float(v), 2) for v in np.maximum(y, 0)]
     body = {"days_left": days if isinstance(data, Batch) else days[0]}
@@ -144,23 +180,13 @@ async def run(request: Request, schema):
     return body
 
 
-@app.post(
-    "/predict",
-    openapi_extra={
-        "requestBody": {
-            "required": True,
-            "content": {
-                "application/json": {
-                    "schema": Reading.model_json_schema()
-                }
-            }
-        }
-    }
-)
-async def predict(request: Request):
+
+@app.post("/predict")
+async def predict(request: Request, reading: Reading):
     return await run(request, Reading)
 
 
 @app.post("/predict_batch")
-async def predict_batch(request: Request):
+async def predict_batch(request: Request, batch: Batch):
     return await run(request, Batch)
+
