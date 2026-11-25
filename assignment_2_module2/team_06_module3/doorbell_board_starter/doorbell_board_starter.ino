@@ -59,7 +59,8 @@ static FeaturePipeline feat;
 static float *fbuf = nullptr; static int fcount = 0;   // window being filled
 static float *fout = nullptr;
 struct Stats {
-  uint32_t framesOk, badCrc, badLen, seqGaps, dup, samples, storeFull, featSent;
+  uint32_t framesOk, badCrc, badLen, seqGaps, dup;
+  uint32_t samples, timelineSamples, storeFull, featSent;
   uint32_t maxUs, uartOverflow; uint64_t sumUs; uint32_t t0, tLast; int32_t lastSeq;
 } st;
 static int fmtBytes = 2; static float qmaxInv = 1.0f / 32767.0f, scale = 1.0f;
@@ -88,7 +89,7 @@ static void pushSamples(Stream &s, const uint8_t *p, size_t nbytes) {
       feat.compute(fbuf, fout);
       uint32_t us = micros() - t;
       st.maxUs = max(st.maxUs, us); st.sumUs += us;
-      uint32_t first = st.samples + i + 1 - feat.c.win;   // index of the frame's first sample
+      uint32_t first = st.timelineSamples + i + 1 - feat.c.win;   // index of the frame's first sample
       uint32_t frameNo = st.featSent++;
       static uint8_t pay[8 + 4 * 128];                     // first_sample, compute_us, features
       memcpy(pay, &first, 4); memcpy(pay + 4, &us, 4); memcpy(pay + 8, fout, 4 * feat.outSize());
@@ -98,15 +99,17 @@ static void pushSamples(Stream &s, const uint8_t *p, size_t nbytes) {
     }
   }
   st.samples += n;
+  st.timelineSamples += n;
 }
 
 static void finishStream(Stream &s, const char *why) {
   char txt[400];
   uint32_t secs_ms = st.tLast - st.t0;
   int n = snprintf(txt, sizeof(txt),
-    "why=%s frames_ok=%u bad_crc=%u bad_len=%u seq_gaps=%u dup=%u samples=%u stored=%u where=%s store_full=%u "
+    "why=%s frames_ok=%u bad_crc=%u bad_len=%u seq_gaps=%u dup=%u samples=%u timeline_samples=%u stored=%u where=%s store_full=%u "
     "features=%u max_us=%u avg_us=%u uart_errors=%u ms=%u",
-    why, st.framesOk, st.badCrc, st.badLen, st.seqGaps, st.dup, st.samples, (unsigned)storeLen, storeWhere,
+    why, st.framesOk, st.badCrc, st.badLen, st.seqGaps, st.dup,
+    st.samples, st.timelineSamples, (unsigned)storeLen, storeWhere,
     st.storeFull, st.featSent, st.maxUs, st.featSent ? (unsigned)(st.sumUs / st.featSent) : 0,
     (unsigned)uartErrors, secs_ms);
   sendFrame(s, 'S', 0, (const uint8_t *)txt, n);
@@ -190,9 +193,31 @@ static void runStream(Stream &s, const char *line) {
     uint16_t len; uint32_t seq, crc; memcpy(&len, buf + 7, 2); memcpy(&seq, buf + 3, 4); memcpy(&crc, buf + 9 + len, 4);
     char type = buf[2]; have = 0;
     if (crc32(buf + 2, 7 + len) != crc) { st.badCrc++; continue; }
-    if ((int32_t)seq <= st.lastSeq) { st.dup++; continue; }
-    if (st.lastSeq >= 0 && (int32_t)seq != st.lastSeq + 1) st.seqGaps += seq - st.lastSeq - 1;
-    st.lastSeq = seq; st.framesOk++; st.tLast = millis();
+    if ((int32_t)seq <= st.lastSeq) {
+      st.dup++;
+      continue;
+    }
+
+    uint32_t gap = 0;
+
+    if (st.lastSeq >= 0 && (int32_t)seq != st.lastSeq + 1) {
+      gap = seq - st.lastSeq - 1;
+      st.seqGaps += gap;
+    }
+
+    st.lastSeq = seq;
+    st.framesOk++;
+    st.tLast = millis();
+
+    if (type == 'D' && gap > 0) {
+      uint32_t samplesPerPacket = len / fmtBytes;
+
+      // Advance original sample timeline over missing packets.
+      st.timelineSamples += gap * samplesPerPacket;
+
+      // Discard incomplete feature windows crossing the gap.
+      fcount = 0;
+    }
     if (type == 'E') { finishStream(s, "end"); return; }
     if (type != 'D') continue;
     if (storeBuf) {
