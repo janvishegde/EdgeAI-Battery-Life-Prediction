@@ -1,0 +1,51 @@
+{
+    "experiment": "mission_4_packet_skip",
+    "team": 6,
+    "clip_id": 0,
+    "label": "on",
+    "sampling_rate": 16000,
+    "window": 480,
+    "hop": 320,
+    "samples_per_packet": 320,
+    "total_samples": 16000,
+    "expected_input_packets": 50,
+    "deliberately_skipped_packets": [
+        10,
+        11,
+        20
+    ],
+    "packets_sent": 47,
+    "expected_feature_frames": 49,
+    "received_feature_frames": 44,
+    "missing_feature_frames": 5,
+    "output_crc_errors": 0,
+    "board_summary": {
+        "why": "end",
+        "frames_ok": 48,
+        "bad_crc": 0,
+        "bad_len": 0,
+        "seq_gaps": 3,
+        "dup": 0,
+        "samples": 15040,
+        "timeline_samples": 16000,
+        "stored": 0,
+        "where": "none",
+        "store_full": 0,
+        "features": 44,
+        "max_us": 7151,
+        "avg_us": 1452,
+        "uart_errors": 0,
+        "ms": 198
+    },
+    "board_ready": {
+        "fs": 16000,
+        "fmt": "i16",
+        "win": 480,
+        "hop": 320,
+        "nfft": 512,
+        "out": 40,
+        "feat": 1,
+        "store": "none",
+        "cap": 0
+    }
+}

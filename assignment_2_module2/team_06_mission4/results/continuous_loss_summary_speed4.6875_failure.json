@@ -1,0 +1,60 @@
+{
+    "experiment": "mission_4_continuous_packet_loss",
+    "team": 6,
+    "clips": 144,
+    "sampling_rate": 16000,
+    "window": 480,
+    "hop": 320,
+    "samples_per_packet": 320,
+    "total_samples": 2304000,
+    "expected_input_packets": 7200,
+    "skipped_packets": [
+        10,
+        11,
+        200
+    ],
+    "packets_sent": 7197,
+    "samples_received": 2293440,
+    "timeline_samples": 2304000,
+    "sequence_gaps": 33,
+    "input_crc_errors": 15,
+    "output_crc_errors": 0,
+    "baseline_continuous_feature_frames": 7199,
+    "received_feature_frames": 7155,
+    "feature_frames_not_received_vs_baseline": 44,
+    "boundary_mixed_frames": 141,
+    "single_clip_labelled_frames": 7014,
+    "missing_sample_intervals": [
+        [
+            3200,
+            3520
+        ],
+        [
+            3520,
+            3840
+        ],
+        [
+            64000,
+            64320
+        ]
+    ],
+    "board_summary": {
+        "why": "end",
+        "frames_ok": 7168,
+        "bad_crc": 15,
+        "bad_len": 0,
+        "seq_gaps": 33,
+        "dup": 0,
+        "samples": 2293440,
+        "timeline_samples": 2304000,
+        "stored": 0,
+        "where": "none",
+        "store_full": 0,
+        "features": 7155,
+        "max_us": 2183,
+        "avg_us": 1578,
+        "uart_errors": 0,
+        "ms": 30843
+    },
+    "speed": 4.6875
+}

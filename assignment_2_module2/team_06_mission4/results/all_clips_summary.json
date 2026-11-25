@@ -1,0 +1,15 @@
+{
+  "clips_attempted": 144,
+  "clips_passed": 144,
+  "packets_sent": 7200,
+  "samples_received": 2304000,
+  "feature_frames_received": 7056,
+  "sequence_gaps": 0,
+  "input_crc_errors": 0,
+  "output_crc_errors": 0,
+  "feature_shape": [
+    7056,
+    40
+  ],
+  "speed": 1.0
+}
