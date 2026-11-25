@@ -1,0 +1,13 @@
+MISSION 3 NOTES (Team 6)
+
+PREDICTION 1: slow starter features.h, 1 frame, on the board  [written BEFORE measuring]
+- Work per frame: 257 output bins x 480 samples = about 123,000 steps.
+- Each step calls cosf and sinf once. I guess about 3 to 4 microseconds per step.
+- So I predict about 400,000 us (400 ms) per frame.
+- A new frame arrives every 20,000 us (20 ms), so the board will be about 20 times too slow.
+- I predict lag_s keeps growing, so the board will not keep up.
+- Source: estimate from an LLM (Claude), not verified. The board decides.
+
+MEASURED: We streamed 10 seconds of audio with features enabled. The expected number of frames was 499, but the board received only 16 frames and lost 483 frames. The median computation time per frame was 1,855,732 microseconds, and the maximum computation time was 1,873,988 microseconds. The frame budget was only 20,000 microseconds (20 ms). The first lag was 1.895 seconds, while the last and maximum lag reached 29.508 seconds. The board summary was None. We also compared the output with NumPy and got a mean difference of 0.0001 dB and a worst difference of 0.0035 dB, which is within the required limit of 0.05 dB.
+
+WHY THE GAP:- Before running the experiment, I predicted that the computation would take around 400,000 microseconds (400 ms) per frame. However, the actual median computation time was 1,855,732 microseconds, which is about 4.6 times slower than my prediction. This happened because the starter code uses a slow method to calculate the features, making the board take much longer to process each frame. Since a new frame arrives every 20 ms, the board could not keep up with the incoming audio. This resulted in 483 lost frames and an increasing delay. The experiment shows that the original implementation is too slow for real-time processing and needs to be improved using a faster FFT method.

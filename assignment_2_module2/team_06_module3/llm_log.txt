@@ -1,0 +1,19 @@
+LLM LOG (Team 6, Mission 3)
+1. Asked Claude to guide me through setup (Python, port COM9, info check). Did the steps myself.
+2. Asked for help with features() in NumPy. Got the four finished lines. I ran it myself: output (49, 40).
+3. Asked for a plotting script. Ran it myself, looked at the plots.
+4. Asked for a prediction of the slow starter's compute time. Got about 400 ms per frame. Will verify on the board.
+
+5. Asked ChatGPT how long a 512-point FFT takes on an ESP32-S3.
+   The answer is that execution time depends on implementation,
+   clock speed, compiler and memory. A radix-2 FFT is much faster
+   than a direct DFT. Our measured optimised implementation took
+   approximately 1,655 microseconds median per feature frame.
+   This is our measured feature-pipeline time, not an isolated
+   measurement of the FFT alone.
+
+6. Used ChatGPT for debugging indentation and comparing NumPy
+   MFCC/log-mel output with board output. I ran the tests myself.
+
+7. Used ChatGPT to interpret COM and USB speed-test results.
+   I performed the tests and recorded the measurements myself.

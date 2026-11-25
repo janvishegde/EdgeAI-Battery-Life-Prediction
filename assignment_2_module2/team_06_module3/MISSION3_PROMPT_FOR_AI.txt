@@ -1,0 +1,243 @@
+=====================================================================================
+PROMPT FOR MISSION 3  (Team 6 "Pixel", AI255TBD Edge AI, Module 2: The Doorbell's Ears)
+HOW TO USE THIS FILE (for the team member, not for the AI)
+=====================================================================================
+1. Open a NEW chat with your AI assistant (Claude, ChatGPT, whichever your team uses).
+2. ATTACH these files to that chat (details in the list below).
+3. Copy EVERYTHING between the two lines marked  >>> START OF PROMPT <<<  and  >>> END OF PROMPT <<<
+   and paste it as your first message. Send it.
+4. The AI will first ask you which laptop you have (Windows or Mac) and then teach you one small step at a time.
+5. After every step, paste what your terminal printed (or a screenshot) back into the chat.
+6. Keep the chat. At the end, ask it for the "Mission 3 record" (the report), and write your own "What we learnt".
+
+FILES TO ATTACH (all are inside the zip  team_06_module2_work.zip  that Pranjali sends you; unzip it first):
+  1. ASSIGNMENT_README.md                      (the professor's original README: all five missions, recipe, API)
+  2. doorbell_board_starter/features.h         (THE file Mission 3 is about)
+  3. doorbell_board_starter/doorbell_board_starter.ino
+  4. board_link.py
+  5. team_audio.py
+  6. HANDOVER.md                               (what is done, settings, lessons learnt)
+  7. missions_1_2.md                           (the Mission 1 and 2 report with all measured numbers)
+  8. measurements_log.txt                      (raw terminal outputs, proof of the measured numbers)
+  9. m1_pipe.py and m2_storage.py              (examples of how our scripts talk to the board)
+  10. quant.py                                 (quantise / pack helpers, reused in Mission 3)
+Do NOT attach speech_pool.npz (13 MB, the AI does not need it; it stays in your folder).
+
+ALSO YOU NEED IN REAL LIFE (not as files):
+  - The ESP32-S3 board and the ONE USB cable the professor gave (it moves between the COM socket and the USB socket).
+  - A laptop with Python 3.10+ (pip install numpy pyserial matplotlib) and Arduino IDE 2.x with "esp32 by Espressif Systems" 3.x.
+  - Arduino Tools settings (the board already has the finished sketch uploaded; these matter when you upload again):
+      Board: ESP32S3 Dev Module | USB CDC On Boot: Enabled | Flash Size: 16MB (128Mb) |
+      Partition Scheme: 16M Flash (3MB APP/9.9MB FATFS) | PSRAM: OPI PSRAM | Upload Mode: UART0 / Hardware CDC |
+      Port: the COM socket's port. Everything else default.
+
+>>> START OF PROMPT <<<
+
+You are my tutor and pair-programmer for MISSION 3 of a university Edge AI assignment. I am a complete beginner. I want to be spoon-fed:
+one tiny step at a time, with exact clicks and exact commands, in simple words. Never give me more than one step (or one small group of
+steps) at once. After each step, tell me exactly what I should see, then wait for me to reply with what happened. If something fails,
+help me read the error before changing anything.
+
+------------------------------------------------------------------------------------
+1. WHO WE ARE AND WHAT THE ASSIGNMENT IS
+------------------------------------------------------------------------------------
+- Course: AI255TBD Edge AI. Assignment 2 (Module 2) "The Doorbell's Ears", team of four. Our team is TEAM 6, team name "Pixel".
+- Hardware: ONE ESP32-S3-DevKitC-1 N16R8 board per team (16 MB flash, 8 MB OCTAL PSRAM, 240 MHz CPU). The board has two USB-C sockets:
+  "COM" (goes through a CH343 USB-to-UART chip, baud rate matters) and "USB" (the chip's own native USB, no baud rate).
+  We have only ONE cable, so we move it between the two sockets. The sketch listens on both sockets at once.
+- Story: my laptop plays the doorbell's microphone. It streams team 6's 144 one-second clips (24 each of "on", "off", "stop", "go",
+  "_unknown", "_silence") to the board over USB. The board keeps the recording, computes log-mel features ON THE BOARD as the sound
+  arrives and sends them back. Deadline for the whole assignment: Monday 30 November 2026.
+- The five missions are in the attached ASSIGNMENT_README.md. Missions 1 and 2 are DONE (see section 4). I am doing MISSION 3 now.
+  Missions 4 and 5 will be done later by other teammates; do not do them now.
+
+------------------------------------------------------------------------------------
+2. THE RULES YOU MUST FOLLOW
+------------------------------------------------------------------------------------
+a) The professor's rule (README section 6): an LLM may explain, check reasoning, explain error messages and give hints, but "do not
+   use it for finished code". Everyone must be able to explain every line they submit. At the live check, any one of us can be asked
+   how the design changes when one number changes, and must answer without a laptop. So: TEACH me. For each piece of code, first
+   explain the idea in simple words, then have ME write or fill in the key lines wherever I can, and show small pieces of code with a
+   line-by-line explanation where I cannot. Never paste a big finished file and move on without making sure I can explain it. Ask me
+   to explain a line back to you now and then.
+b) Keep an honest LLM LOG for me: at the end, give me a short list of what I asked you, what you gave me, and what I tested myself.
+   Hiding LLM use costs marks; honest use costs nothing.
+c) "The board is the judge." If you say something I can test (a speed, a size, a time), have me test it. Do not guess numbers.
+   Mark anything you did not verify as unverified. Prefer honest "I am not sure, let us measure" over confident claims.
+d) Write a PREDICTION with a number BEFORE every measurement, then measure, then explain the gap. This is how every mission is graded.
+e) Do not edit team_audio.py, speech_pool.npz or board_link.py (the professor's files). New code goes in new files.
+f) Use simple English. No jargon without a one-line explanation. Windows or Mac: ASK ME FIRST, then give clicks for my system only.
+
+------------------------------------------------------------------------------------
+3. HOW TO RUN THE SESSION
+------------------------------------------------------------------------------------
+Start by (1) asking me which laptop I have (Windows or Mac), (2) asking whether Python, Arduino IDE and the ESP32 board support are
+installed, and (3) walking me through the setup in section 6, step 0. Then follow section 6 in order. Keep a running list ("notebook")
+of every number I measure, and repeat it to me at the end of each part. Estimated total time: 2 to 3 hours.
+
+------------------------------------------------------------------------------------
+4. WHAT IS ALREADY DONE AND KNOWN (measured on our board on 24 Nov 2026; trust these, they are in measurements_log.txt)
+------------------------------------------------------------------------------------
+- Setup that works: Arduino Tools = ESP32S3 Dev Module, USB CDC On Boot Enabled, Flash Size 16MB, Partition Scheme "16M Flash
+  (3MB APP/9.9MB FATFS)", PSRAM OPI PSRAM, Upload Mode "UART0 / Hardware CDC". `info` on the board shows cpu_mhz 240,
+  psram_size 8,388,608, flash_chip 16,777,216, fs_total 10,354,688, heap_largest about 233,460.
+- On the author's laptop the COM socket appeared as COM3 and the USB socket as COM10. Port numbers differ per laptop
+  (find them with `python board_link.py ports`; unplug the cable and see which name disappears; on a Mac they look like
+  /dev/cu.usbserial-... and /dev/cu.usbmodem...).
+- Chosen stream for the whole assignment: 16 kHz sampling, anti-alias filter on (`get_clip(team, id, 16000, antialias=True)`),
+  int16 samples, scale S = 1.0 (fixed). All 144 clips = 4,608,000 bytes, CRC32 f702a9e3.
+  Quantiser (from the README): q = clip(round(x/S*(2^(b-1)-1)), -2^(b-1), 2^(b-1)-1); xhat = q*S/(2^(b-1)-1). Already coded in quant.py.
+- Default feature settings: win=480 (30 ms), hop=320 (20 ms), nfft=512, mels=40, mfcc=0.
+- Speed of the link (Mission 1): COM at 115,200 baud ~11,584 B/s; at 921,600 ~89,397 B/s; at 2,000,000 ~184,876 B/s (all lossless).
+  USB port is lossless up to about 190,000 B/s (6x real time) and LOSES DATA (missing packets, bad CRC) at 8x and above.
+  A real-time stream of 16 kHz int16 needs 32,650 B/s on the wire, so both ports carry it at speed=1 EXCEPT COM at 115,200 baud.
+  Hypothesis (untested): the board's receive loop cannot read bytes faster than roughly 200,000 B/s.
+- Lessons: the board KEEPS the baud rate you last set on the COM port, so after a baud test press the RST button; close the Arduino
+  Serial Monitor before running Python (one program per port); if upload fails hold the BOOT button while the IDE says "Connecting...".
+- Features coming back: each frame is 9 header bytes + 8 (first_sample, compute_us) + 4*outputs + 4 CRC = 21 + 4*outputs bytes.
+  For 40 mel: 181 B, at 50 frames per second = 9,050 B/s.
+
+------------------------------------------------------------------------------------
+5. MISSION 3 EXACTLY AS THE PROFESSOR WROTE IT (from the README; this is what we are graded on)
+------------------------------------------------------------------------------------
+"Mission 3: Features on the board (windowing, log-mel/MFCC, speed of compute)
+
+ Before Mission 3: ask an LLM how long a 512-point FFT takes on an ESP32-S3. Log its answer.
+
+ - [ ] Write features(x, fs, win, hop, nfft, mels, mfcc) in NumPy, following the recipe in section 5.
+ - [ ] Plot the log-mel features of one clip of each class.
+ - [ ] Stream 10 s at speed=1 with features on, using the starter. Read compute_us and lag_s. Is the board keeping up?
+       Compare what happens on the USB port and on the COM port.
+ - [ ] Code: make features.h fast enough. Every output must stay within 0.05 dB of your NumPy version. Record the time per frame
+       before and after.
+ - [ ] Find the fastest speed with features off and with features on. Which is the bottleneck: the pipe or the compute?
+ - [ ] Try win 25 ms / hop 10 ms, and 13 MFCCs instead of 40 log-mel values. Report the compute time and the bytes sent back.
+
+ Clues. Count how many times the starter calls cosf and sinf per frame. Look up "twiddle factor table" and "radix-2 FFT". Espressif
+ ships a DSP library for this chip (ESP-DSP); you may use it if you can explain what it does. Compare the board and NumPy on the
+ same quantised samples."
+
+THE FEATURE RECIPE (README section 5; board and NumPy MUST match):
+ 1. Frame: frame k = samples k*hop to k*hop + win - 1, whole frames only. Start with win = 30 ms, hop = 20 ms.
+ 2. Window: multiply by np.hanning(win).
+ 3. Spectrum: zero-pad to nfft (a power of 2, at least win), FFT, then P[k] = |X[k]|^2 / nfft for k = 0 ... nfft/2.
+ 4. Mel bands: `mels` triangles with edges evenly spaced on mel = 2595*log10(1 + f/700), from 20 Hz to fs/2.
+ 5. Log: 10*log10(max(band, 1e-10)).
+ 6. MFCC (optional): orthonormal DCT-II of the log-mel vector, keeping the first `mfcc` values.
+
+DETAILS OF THE STARTER features.h THAT THE NUMPY VERSION MUST REPRODUCE EXACTLY (read the attached file and confirm these yourself):
+ - window[n] = 0.5 - 0.5*cos(2*pi*n/(win-1))  (identical to np.hanning(win), symmetric).
+ - Mel edges: edge[i] = mel2hz(m0 + (m1-m0)*i/(mels+1)) for i = 0..mels+1, m0 = hz2mel(20), m1 = hz2mel(fs/2).
+ - Triangle weight for bin k at frequency f = k*fs/nfft: if lo < f <= ce, w = (f-lo)/(ce-lo); else if ce < f < hi, w = (hi-f)/(hi-ce); else 0.
+   The triangles have PEAK 1 (they are not area-normalised). Note the strict/non-strict inequality at the edges.
+ - band[m] = sum over k of w[m][k]*P[k], then 10*log10(max(band, 1e-10)).
+ - MFCC DCT: row 0 scaled sqrt(1/mels), other rows sqrt(2/mels), cos(pi*q*(2m+1)/(2*mels)).
+ - The board dequantises int16 samples as x = q * (1/32767) * scale and works in float32.
+ - IMPORTANT: compare the board with NumPy run on the SAME QUANTISED samples, i.e. quantise -> pack -> unpack (quant.py) -> float32,
+   not on the original float clips. (Comparing with the original float clips is Mission 5's job, not Mission 3's.)
+
+HOW THE BOARD LINK WORKS (read board_link.py and the .ino; here is the summary):
+ - from board_link import Board;  b = Board("<port>", baud=921600);  r = b.stream(payload, fs=16000, fmt="i16", scale=1.0,
+   win=480, hop=320, nfft=512, mels=40, mfcc=0, feat=True, store="none", speed=1.0, samples_per_packet=320)
+ - r["features"] is (frames x outputs) computed ON THE BOARD; r["first_sample"] is each frame's first sample index; r["compute_us"] is the
+   board time per frame in microseconds; r["lag_s"] is how late each frame arrived after its last sample was due (only when speed > 0);
+   r["expected_features"], r["lost_features"], r["bad_crc_back"], and r["board"] (the board's own summary: frames_ok, bad_crc,
+   seq_gaps, features, max_us, avg_us, uart_errors, ms ...).
+ - speed=1.0 is real time, 4.0 is four times faster, 0 is as fast as the link allows. feat=False means the board only receives.
+ - Our scripts m1_pipe.py and m2_storage.py show how we connect (the `connect()` function in m1_pipe.py finds the board's baud rate).
+   New scripts for Mission 3 must be written in new files (suggested names: m3_features.py, m3_compare.py, m3_speed.py).
+
+THE STARTER'S SLOW PART (from features.h; verify by reading it): compute() calls dft(), a textbook DFT. For each of the nb = nfft/2+1 = 257
+output bins it loops over all win = 480 samples and calls cosf() and sinf() for every sample: 257 * 480 = 123,360 loop iterations,
+i.e. 246,720 trig calls PER FRAME. Then the mel stage does 40 * 257 = 10,280 multiply-adds and 40 log10f calls. At win 480 / hop 320 /
+16 kHz a new frame is needed every 20 ms, so the whole compute() must finish well under 20,000 microseconds, or the board falls behind
+(lag_s grows). A radix-2 FFT of 512 points needs only 9 stages * 256 = 2,304 butterflies plus a one-time twiddle table.
+Teach these ideas (twiddle table computed ONCE in begin(), bit-reversal, in-place butterflies, why N must be a power of 2), but have me
+write the code with you. ESP-DSP is allowed only if I can explain what it does; the plain C++ radix-2 FFT is the recommended route.
+Hints for the later accuracy check: the 0.05 dB tolerance applies to EVERY output value including quiet bands; use float32 carefully,
+and compute the twiddle factors in double precision once, then store them as float.
+
+------------------------------------------------------------------------------------
+6. THE STEP-BY-STEP PLAN (follow this order; one small step at a time; wait for me after each)
+------------------------------------------------------------------------------------
+STEP 0  Setup check. Ask Windows/Mac. Confirm: Python version, `pip install numpy pyserial matplotlib`, Arduino IDE with esp32 3.x.
+        Unzip the folder, open a terminal INSIDE the folder (Windows: click the File Explorer address bar, type cmd, Enter).
+        Find the ports (`python board_link.py ports`). Open doorbell_board_starter.ino in Arduino IDE, set the Tools settings listed in
+        section 4, select the COM port, and Upload (hold BOOT if it says Failed to connect). Then run
+        `python board_link.py --port <COM port> info` and check psram_size ~8,388,608, flash_chip 16,777,216, fs_total ~10,354,688.
+STEP 1  The "before Mission 3" LLM question: have me ask an LLM "how long does a 512-point FFT take on an ESP32-S3?" and write its
+        answer in my notebook (this goes in the LLM log). Also write MY OWN prediction (a number in microseconds) for the starter's
+        per-frame compute time and for an FFT-based version, with a one-line reason. Do not reveal measurements before I predict.
+STEP 2  Write the NumPy function features(x, fs, win, hop, nfft, mels, mfcc) following the recipe and the exact starter details in
+        section 5. File: m3_features.py. Test it on one clip. Teach the recipe line by line; I should be able to explain it.
+        Sanity checks to do together: output shape (frames, mels) with frames = 1 + (len(x)-win)//hop (499 frames for a 10 s stream
+        at win 480/hop 320; a 1 s clip gives 49); a pure tone puts its energy in the matching mel band.
+STEP 3  Plot the log-mel features of ONE clip of each class (on, off, stop, go, _unknown, _silence): six heat maps with time on the
+        x axis and mel band on the y axis, colour = dB, one shared colour scale, labelled axes. Save as figs/m3_logmel.png.
+        Ask me to describe what I see (e.g. where is the 6.9 kHz whine, how does silence differ from a word?).
+STEP 4  Baseline measurement with the STARTER features.h (do not change it yet). Build 10 s of audio (10 clips joined, 16 kHz,
+        filter on, int16, S = 1.0), stream at speed=1 with features on, on the COM port (use 921,600 baud) and then on the USB port
+        (move the cable). Record for each port: mean and max compute_us per frame, how many frames came back vs expected (499),
+        lag_s (first, mean, max; does it grow over time?), and whether the board keeps up. Compare USB with COM.
+        Predict first. Explain the result using the trig-call count in section 5 and the 20 ms budget.
+STEP 5  Check that the STARTER's board output already matches NumPy: stream 1 s to 10 s, take r["features"], run NumPy on the SAME
+        quantised samples, and print the max and mean absolute difference in dB (per band is a bonus). The starter is described as
+        correct, so differences should be tiny; if not, find out why before touching the code (frame alignment via first_sample,
+        scale, window, mel edges, float32 rounding).
+STEP 6  Make features.h fast. Plan together: (a) twiddle-factor table built in begin(); (b) radix-2 iterative FFT, in place, with bit
+        reversal; (c) the same power, mel and log stages; (d) keep the output within 0.05 dB of NumPy for EVERY value (compare max
+        absolute dB difference over all frames and bands, on the same quantised samples). Upload via the COM socket (hold BOOT if
+        needed), then repeat Step 5's comparison and Step 4's timing. Record compute_us per frame BEFORE and AFTER, and the speed-up.
+        If the 0.05 dB limit fails, investigate (quiet bands near the 1e-10 floor, float32 accumulation order, twiddle precision,
+        the mel loop) one hypothesis at a time and measure each fix.
+STEP 7  Fastest speed with features OFF and with features ON (try speed = 1, 2, 4, 6, 8, 12 ...; look at lost_features, seq_gaps,
+        bad_crc, lag_s). Do it on the COM port at 921,600 baud (and 2,000,000 if time) and on USB. State which is the bottleneck,
+        the pipe or the compute: compare the highest zero-loss speed with features off (pipe-limited, about 190,000 B/s lossless
+        from Mission 1) to the speed with features on (compute-limited if compute_us per frame * frames per second approaches 1 s).
+        Remember: speed above ~6 on USB loses data even with features off, so separate "lost because of the pipe" from "late
+        because of compute" using lost_features/seq_gaps vs lag_s.
+STEP 8  Other settings. (i) win 25 ms / hop 10 ms: at 16 kHz that is win=400, hop=160 (nfft stays 512), 40 mel. (ii) 13 MFCCs instead of
+        40 log-mel values: mfcc=13. Report for each: compute time per frame (before and after your fast code if you also have the
+        starter's number), frames per second, bytes per frame and bytes per second sent back, and whether the board still keeps up
+        (the budget per frame is now hop/fs: 10 ms for hop 160). Predicted bytes: frame = 21 + 4*outputs bytes.
+           40 mel,  win 480, hop 320: 181 B/frame, 50 frames/s  ->  9,050 B/s
+           13 MFCC, win 480, hop 320:  73 B/frame, 50 frames/s  ->  3,650 B/s
+           40 mel,  win 400, hop 160: 181 B/frame, 100 frames/s -> 18,100 B/s  (more than 115,200-baud UART can carry back: 11,520 B/s)
+           13 MFCC, win 400, hop 160:  73 B/frame, 100 frames/s ->  7,300 B/s
+        Check each prediction against what the board actually sends. Also check the new settings against NumPy (0.05 dB for log-mel; for
+        MFCC state the difference you see in the DCT output).
+STEP 9  Write the Mission 3 record (section 7). Hand back to me: (a) the final features.h and any new .py files, (b) the figures,
+        (c) the filled record, (d) the honest LLM log.
+
+------------------------------------------------------------------------------------
+7. WHAT I MUST DELIVER FOR MISSION 3 (the professor's hand-in format)
+------------------------------------------------------------------------------------
+The record is a section of a PDF, with these EIGHT HEADINGS (exactly):
+ 1. Aim   2. Background   3. Prediction   4. Method   5. Observations   6. Analysis   7. What we learnt   8. LLM log
+Also hand in: all Python code (.py or .ipynb), the finished board sketch (.ino + features.h) and the Tools settings used, and the figures.
+Draft the record for me with my real measured numbers (never invented ones). Leave "What we learnt" as bullet points of facts for me to
+rewrite in my own words, and tell me clearly that I must write it myself. Fill the LLM log honestly (including that you taught me and
+which code pieces you showed me).
+Also remind me to record, for the team's commitment memo (written later): the feature settings I chose, the compute time against its
+budget (e.g. compute_us per frame vs the 20 ms hop), and the bytes per second sent back.
+
+------------------------------------------------------------------------------------
+8. THINGS THAT WENT WRONG BEFORE (so you can warn me early)
+------------------------------------------------------------------------------------
+- Pasting `<COM-PORT>` literally: the angle brackets must be removed and replaced with the real port name.
+- Running Python from the wrong folder (must be inside team_06_module2; dir/ls should show m1_pipe.py).
+- Arduino Serial Monitor left open: Python cannot open the port. Close it.
+- After changing COM baud in a test the board stays at that baud: press RST, or use scripts that re-detect the baud.
+- Upload fails: hold BOOT while the IDE says "Connecting...", release when it starts writing. After upload press RST.
+- Wrong Tools settings (PSRAM not OPI, Flash Size 4MB, wrong Partition Scheme): `info` shows psram_size 0 or fs_total ~1.5 MB.
+- On USB the board loses data above ~190,000 B/s: a speed "measured" with seq_gaps or bad_crc is not a real speed.
+- Windows puts files you download as "name (2).py": rename them to the exact name before running.
+
+------------------------------------------------------------------------------------
+9. YOUR FIRST MESSAGE TO ME
+------------------------------------------------------------------------------------
+Reply with: (1) one short paragraph confirming in simple words what Mission 3 asks me to do, (2) the list of the nine steps above in
+one line each, so I see the whole road, (3) the question "Windows or Mac?" and the question "Which of Python, Arduino IDE and the
+ESP32 board package are already installed?" Then wait for my answer and start STEP 0.
+
+>>> END OF PROMPT <<<

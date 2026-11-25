@@ -1,0 +1,125 @@
+Mission 3 – The Doorbell's Ears
+Team 6 – Pixel
+
+ 1. Aim
+
+The aim of Mission 3 was to implement audio feature extraction on the ESP32-S3 board, measure its processing speed, compare its output with NumPy, and optimise the feature extraction process using a faster FFT algorithm.
+
+ 2. Background
+
+The system processes audio sampled at 16 kHz. It divides the audio into frames and applies a Hann window before calculating frequency information using an FFT.
+
+The frequency information is converted into mel-band energies. These are converted into log-mel features. We also tested MFCC with 13 coefficients.
+
+The starter implementation used a direct Discrete Fourier Transform (DFT), which was computationally slow. We improved it using a precomputed twiddle table and a radix-2 FFT.
+
+The board output was compared with NumPy using the same quantised audio samples. The required maximum difference was 0.05 dB.
+
+
+3. Prediction
+
+Before testing the original starter implementation, I predicted approximately 400,000 microseconds (400 ms) per frame. I expected it to be too slow because the frame budget was only 20,000 microseconds.
+
+The original DFT prediction was written before measuring.
+
+For the optimised FFT, I expected the processing time to decrease significantly because the FFT uses fewer calculations than the direct DFT. A separate numerical prediction for the optimised FFT was not recorded before testing.
+
+For the changed window and hop settings (400 samples and 160 samples), I predicted approximately 1,700 microseconds per frame, with a frame budget of 10,000 microseconds.
+
+For MFCC with 13 coefficients, I expected smaller output packets than the 40-band log-mel features.
+
+ 4. Method
+
+1. Used the provided Team 6 audio dataset and selected clips from all six classes: on, off, stop, go, unknown and silence.
+2. Implemented the NumPy feature extraction function using a symmetric Hann window, power spectrum, triangular mel filterbank and log-mel calculation.
+3. Generated six log-mel heatmaps using one clip from each class, with a common colour scale.
+4. Connected the ESP32-S3 board and streamed 10 seconds of audio with features enabled.
+5. Measured feature computation time, received frames, lost frames and processing lag.
+6. Compared the board's feature output with NumPy using the same quantised audio samples.
+7. Optimised the board implementation by adding a twiddle table and radix-2 FFT.
+8. Tested different streaming speeds with features both ON and OFF over COM and USB connections.
+9. Tested a 400-sample window and 160-sample hop, followed by MFCC extraction with 13 coefficients.
+10. Recorded the measurements and saved the generated plot and experiment results.
+
+ 5. Observations
+Original DFT implementation
+- Expected feature frames: 499
+- Received feature frames: 16
+- Lost feature frames: 483
+- Median computation time: 1,855,732 µs
+- Maximum computation time: 1,873,988 µs
+- Frame budget: 20,000 µs
+- Maximum lag: 29.508 seconds
+- Worst difference from NumPy: 0.0035 dB
+
+ Optimised FFT implementation
+- Expected feature frames: 499
+- Received feature frames: 499
+- Lost feature frames: 0
+- Median computation time: 1,655 µs
+- Maximum computation time: 1,834 µs
+- Worst difference from NumPy: 0.0001 dB
+
+ Changed window and hop
+For win=400 and hop=160 with 40 mel bands:
+- Expected and received frames: 998
+- Median computation time: 1,648 µs
+- Maximum computation time: 1,824 µs
+- Frame budget: 10,000 µs
+- Lost frames: 0
+- Worst difference from NumPy: 0.0001 dB
+
+ MFCC with 13 coefficients
+- Expected and received frames: 998
+- Median computation time: 1,677 µs
+- Maximum computation time: 1,859 µs
+- Lost frames: 0
+- Worst difference from NumPy: 0.0001 dB
+
+ USB speed tests
+With features ON, speeds 1×, 2× and 4× completed without losses. At 5×, 94 feature frames were lost; at 6×, 205 were lost. Unpaced speed 0× also failed due to transmission errors.
+
+ 6. Analysis
+
+The original DFT implementation was too slow for real-time audio processing. Its median computation time was 1,855,732 µs, which was much higher than the 20,000 µs frame budget.
+
+After optimisation using a radix-2 FFT and precomputed twiddle values, the median computation time decreased to 1,655 µs. This is approximately 1,121 times faster than the original DFT measurement.
+
+The optimised implementation also produced accurate results. Its worst difference from NumPy was only 0.0001 dB, which is well within the required 0.05 dB limit.
+
+For win=400 and hop=160, the board processed 100 frames per second. The frame budget was 10,000 µs, while the maximum measured computation time was 1,824 µs. Therefore, the board had sufficient time to process each frame.
+
+For 40 log-mel bands, each feature packet used 181 bytes. At 100 frames per second, the data rate was 18,100 bytes per second.
+
+For 13 MFCC coefficients, each packet used 73 bytes. At 100 frames per second, the data rate was 7,300 bytes per second. MFCC therefore reduced the feature data size.
+
+In the COM speed tests, features ON completed without losses up to 20× and also passed the unpaced test. The transfer time stopped decreasing significantly at higher speeds, suggesting a communication or transfer-overhead limit.
+
+In the USB tests, 4× was the highest reliable tested speed with features ON. At 5× and 6×, packet errors and lost feature frames occurred. This indicates that the USB data-transfer path became a bottleneck at higher speeds.
+
+7. What we learnt
+In this mission, we learnt how audio is processed by our ESP32 board and how feature extraction works. At first, we used the DFT method, but it was taking too much time to process each frame and many frames were getting missed. After changing it to FFT, the processing became much faster and the board was able to receive all the frames properly.
+We also learnt how to calculate log-mel and MFCC features using Python and how to compare the results with the ESP32 board. We checked the values using the same audio samples and found that the difference was very small. This helped us understand that the board was giving almost the same output as Python.
+We tried different window and hop sizes and also tested different speeds using COM and USB. We noticed that USB was working properly at lower speeds, but when we increased the speed too much, some frames were getting missed. From this, we understood that not only the processing speed but also the data transfer speed is important.
+Overall, we got practical experience in working with audio data, writing Python code, changing the board code and testing the results. We also learnt that choosing a faster algorithm can make a big difference in real-time processing. 
+
+8. LLM log
+We used LLM assistance to understand the assignment, debug errors, interpret measurements and check our reasoning.
+- Asked Claude for help with Python setup and serial-port checking. We performed the steps ourselves.
+- Asked for guidance with the NumPy features function and tested it ourselves.
+- Used assistance to create and understand the six-class plotting script.
+- Asked Claude for a prediction of the original DFT processing time. The estimate was approximately 400 ms per frame.
+- Asked ChatGPT about the expected execution time of a 512-point FFT on an ESP32-S3 during report preparation. The answer explained that execution time depends on the implementation and hardware configuration. Our measured feature-pipeline time was approximately 1,655 us median per frame; this was not an isolated FFT measurement.
+- Used ChatGPT to debug Python indentation errors and compare NumPy log-mel and MFCC outputs with board results.
+- Used ChatGPT to interpret COM and USB speed-test results.
+We performed the experiments, ran the scripts, uploaded the firmware and recorded the measurements ourselves.
+
+Appendix: ESP32 Board Tools Settings
+Board: ESP32S3 Dev Module
+USB CDC On Boot: Enabled
+Flash Size: 16MB (128Mb)
+Partition Scheme: 16M Flash (3MB APP/9.9MB FATFS)
+PSRAM: OPI PSRAM
+Upload Mode: UART0 / Hardware CDC
+Port: COM port (COM9 during our tests)
+Other settings: Default

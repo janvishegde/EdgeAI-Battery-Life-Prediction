@@ -1,0 +1,279 @@
+RAW TERMINAL OUTPUT, team 6 (Pixel), Windows laptop, ESP32-S3 N16R8, 24 November 2026
+Ports on this laptop: COM3 = COM socket (CH343 bridge), COM10 = USB socket (native). Port numbers differ per laptop.
+Part 1 is exactly what was pasted from the terminal (setup check, COM speed, USB speed, USB zero-loss sweep).
+Part 2 is the rest (real-time tables, packet sizes, SRAM, PSRAM, flash save, power-cut check).
+==================================================================================================
+PART 1
+==================================================================================================
+Microsoft Windows [Version 10.0.26200.9974]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>dir
+ Volume in drive C is Windows-SSD
+ Volume Serial Number is A4EC-D9F6
+
+ Directory of C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2
+
+11/24/2026  04:48 PM    <DIR>          .
+11/24/2026  04:48 PM    <DIR>          ..
+11/24/2026  04:48 PM            19,551 BEGINNER_GUIDE.md
+11/24/2026  04:48 PM            10,651 board_link.py
+11/24/2026  04:48 PM    <DIR>          doorbell_board_starter
+11/24/2026  04:48 PM    <DIR>          figs
+11/24/2026  04:48 PM             7,639 m1_pipe.py
+11/24/2026  04:48 PM             3,291 m2_analysis.py
+11/24/2026  04:48 PM             4,855 m2_storage.py
+11/24/2026  04:48 PM            13,907 missions_1_2.md
+11/24/2026  04:48 PM             2,122 quant.py
+11/24/2026  04:48 PM        13,023,582 speech_pool.npz
+11/24/2026  04:48 PM            78,553 Team6_Beginner_Guide_Missions_1_2.pdf
+11/24/2026  04:48 PM           197,400 team_06_missions_1_2_draft.pdf
+11/24/2026  04:48 PM             5,928 team_audio.py
+              11 File(s)     13,367,479 bytes
+               4 Dir(s)  638,465,126,400 bytes free
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python board_link.py ports
+COM9                 Standard Serial over Bluetooth link (COM9)
+COM7                 Standard Serial over Bluetooth link (COM7)
+COM8                 Standard Serial over Bluetooth link (COM8)
+COM4                 Standard Serial over Bluetooth link (COM4)
+COM6                 Standard Serial over Bluetooth link (COM6)
+COM5                 Standard Serial over Bluetooth link (COM5)
+COM3                 USB-Enhanced-SERIAL CH343 (COM3)
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python board_link.py --port COM3 info
+cpu_mhz                 240
+heap_free           287,868
+heap_largest        233,460
+psram_size        8,388,608
+psram_free        8,350,688
+psram_largest     8,257,524
+flash_chip       16,777,216
+fs_total         10,354,688
+fs_used               8,192
+stored                    0
+where          none
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python m1_pipe.py com --port COM3
+com  baud=  115200 i16 16k spp=320   speed=0    run0:    11,583 B/s (laptop) | board ms=28104 gaps=0 crc=0 uart_err=0
+com  baud=  115200 i16 16k spp=320   speed=0    run1:    11,583 B/s (laptop) | board ms=28106 gaps=0 crc=0 uart_err=0
+com  baud=  115200 i16 16k spp=320   speed=0    run2:    11,584 B/s (laptop) | board ms=28103 gaps=0 crc=0 uart_err=0
+com  baud=  115200 i16 16k spp=320   speed=0    run3:    11,584 B/s (laptop) | board ms=28104 gaps=0 crc=0 uart_err=0
+Traceback (most recent call last):
+  File "C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2\m1_pipe.py", line 162, in <module>
+    if a.what == "com": cmd_speed(a, "com", [115200, 921600, 2000000])
+                        ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2\m1_pipe.py", line 101, in cmd_speed
+    b = connect(a.port, 921600)
+  File "C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2\m1_pipe.py", line 68, in connect
+    raise RuntimeError(f"board on {port} does not answer PING at {baud} baud")
+RuntimeError: board on COM3 does not answer PING at 921600 baud
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python m1_pipe.py com --port COM3 --bauds 921600,2000000
+com  baud=  921600 i16 16k spp=320   speed=0    run0:    89,186 B/s (laptop) | board ms=3609 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run1:    89,243 B/s (laptop) | board ms=3609 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run2:    89,529 B/s (laptop) | board ms=3596 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run3:    89,420 B/s (laptop) | board ms=3601 gaps=0 crc=0 uart_err=0
+com  baud= 2000000 i16 16k spp=320   speed=0    run0:   180,996 B/s (laptop) | board ms=1758 gaps=0 crc=0 uart_err=0
+com  baud= 2000000 i16 16k spp=320   speed=0    run1:   185,961 B/s (laptop) | board ms=1710 gaps=0 crc=0 uart_err=0
+com  baud= 2000000 i16 16k spp=320   speed=0    run2:   187,852 B/s (laptop) | board ms=1692 gaps=0 crc=0 uart_err=0
+com  baud= 2000000 i16 16k spp=320   speed=0    run3:   180,816 B/s (laptop) | board ms=1758 gaps=0 crc=0 uart_err=0
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python board_link.py ports
+COM9                 Standard Serial over Bluetooth link (COM9)
+COM7                 Standard Serial over Bluetooth link (COM7)
+COM8                 Standard Serial over Bluetooth link (COM8)
+COM4                 Standard Serial over Bluetooth link (COM4)
+COM6                 Standard Serial over Bluetooth link (COM6)
+COM5                 Standard Serial over Bluetooth link (COM5)
+COM10                USB Serial Device (COM10)
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python m1_pipe.py usb --port COM10
+usb  baud=  921600 i16 16k spp=320   speed=0    run0:    83,347 B/s (laptop) | board ms=268 gaps=0 crc=180 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=0    run1:   366,301 B/s (laptop) | board ms=848 gaps=434 crc=163 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=0    run2:    83,302 B/s (laptop) | board ms=251 gaps=0 crc=186 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=0    run3:   349,547 B/s (laptop) | board ms=891 gaps=426 crc=189 uart_err=0
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python m1_pipe.py sweep --port COM10 --label usb
+usb  baud=  921600 i16 16k spp=320   speed=1.0  run0:    32,495 B/s (laptop) | board ms=9983 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=1.0  run1:    32,495 B/s (laptop) | board ms=9983 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=1.0  run2:    32,501 B/s (laptop) | board ms=9983 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=1.0  run3:    32,497 B/s (laptop) | board ms=9982 gaps=0 crc=0 uart_err=0
+   >>> speed=1.0: needs 32,650 B/s on the wire -> ZERO LOSS in every run
+usb  baud=  921600 i16 16k spp=320   speed=2.0  run0:    64,696 B/s (laptop) | board ms=4993 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=2.0  run1:    64,706 B/s (laptop) | board ms=4992 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=2.0  run2:    64,702 B/s (laptop) | board ms=4994 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=2.0  run3:    64,688 B/s (laptop) | board ms=4993 gaps=0 crc=0 uart_err=0
+   >>> speed=2.0: needs 65,300 B/s on the wire -> ZERO LOSS in every run
+usb  baud=  921600 i16 16k spp=320   speed=4.0  run0:   128,165 B/s (laptop) | board ms=2499 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=4.0  run1:   128,141 B/s (laptop) | board ms=2499 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=4.0  run2:   128,139 B/s (laptop) | board ms=2497 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=4.0  run3:   128,138 B/s (laptop) | board ms=2498 gaps=0 crc=0 uart_err=0
+   >>> speed=4.0: needs 130,600 B/s on the wire -> ZERO LOSS in every run
+usb  baud=  921600 i16 16k spp=320   speed=6.0  run0:   190,417 B/s (laptop) | board ms=1667 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=6.0  run1:   190,288 B/s (laptop) | board ms=1666 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=6.0  run2:   190,440 B/s (laptop) | board ms=1666 gaps=0 crc=0 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=6.0  run3:   190,432 B/s (laptop) | board ms=1666 gaps=0 crc=0 uart_err=0
+   >>> speed=6.0: needs 195,900 B/s on the wire -> ZERO LOSS in every run
+usb  baud=  921600 i16 16k spp=320   speed=8.0  run0:   233,508 B/s (laptop) | board ms=1351 gaps=266 crc=133 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=8.0  run1:   233,457 B/s (laptop) | board ms=1351 gaps=268 crc=134 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=8.0  run2:   233,488 B/s (laptop) | board ms=1350 gaps=272 crc=136 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=8.0  run3:   233,384 B/s (laptop) | board ms=1350 gaps=270 crc=135 uart_err=0
+   >>> speed=8.0: needs 261,200 B/s on the wire -> LOSS in at least one run
+usb  baud=  921600 i16 16k spp=320   speed=12.0 run0:    82,142 B/s (laptop) | board ms=284 gaps=0 crc=188 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=12.0 run1:    82,157 B/s (laptop) | board ms=293 gaps=0 crc=198 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=12.0 run2:    82,143 B/s (laptop) | board ms=283 gaps=0 crc=200 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=12.0 run3:   334,401 B/s (laptop) | board ms=929 gaps=422 crc=205 uart_err=0
+   >>> speed=12.0: needs 391,800 B/s on the wire -> LOSS in at least one run
+usb  baud=  921600 i16 16k spp=320   speed=16.0 run0:   339,856 B/s (laptop) | board ms=913 gaps=425 crc=204 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=16.0 run1:    83,176 B/s (laptop) | board ms=279 gaps=0 crc=171 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=16.0 run2:    82,849 B/s (laptop) | board ms=766 gaps=300 crc=172 uart_err=0
+usb  baud=  921600 i16 16k spp=320   speed=16.0 run3:    82,918 B/s (laptop) | board ms=274 gaps=0 crc=183 uart_err=0
+   >>> speed=16.0: needs 522,400 B/s on the wire -> LOSS in at least one run
+
+==================================================================================================
+PART 2
+==================================================================================================
+
+C:\Users\pranj\Downloads\team_06_module2_work\team_06_module2>python m1_pipe.py realtime --port COM10 --label usb
+usb  baud=  921600 f32 16k spp=320   speed=1.0  run1:    63,988 B/s (laptop) | board ms=4985 gaps=0 crc=0 uart_err=0
+   needs 64,650 B/s on the wire; sent 5 s of audio in 5.003 s -> CARRIES it
+usb  baud=  921600 i16 16k spp=320   speed=1.0  run1:    32,341 B/s (laptop) | board ms=4983 gaps=0 crc=0 uart_err=0
+   needs 32,650 B/s on the wire; sent 5 s of audio in 5.003 s -> CARRIES it
+usb  baud=  921600 i8 16k spp=320   speed=1.0  run1:    16,504 B/s (laptop) | board ms=4982 gaps=0 crc=0 uart_err=0
+   needs 16,650 B/s on the wire; sent 5 s of audio in 5.002 s -> CARRIES it
+usb  baud=  921600 i16 8k spp=320   speed=1.0  run1:    16,174 B/s (laptop) | board ms=4963 gaps=0 crc=0 uart_err=0
+   needs 16,325 B/s on the wire; sent 5 s of audio in 5.002 s -> CARRIES it
+usb  baud=  921600 i8 8k spp=320   speed=1.0  run1:     8,249 B/s (laptop) | board ms=4961 gaps=0 crc=0 uart_err=0
+   needs 8,325 B/s on the wire; sent 5 s of audio in 5.002 s -> CARRIES it
+
+C:\...>python m1_pipe.py realtime --port COM3 --label com --baud 115200
+com  baud=  115200 f32 16k spp=320   speed=1.0  run1:    11,572 B/s (laptop) | board ms=27830 gaps=0 crc=0 uart_err=0
+   needs 64,650 B/s on the wire; sent 5 s of audio in 27.858 s -> CANNOT keep up
+com  baud=  115200 i16 16k spp=320   speed=1.0  run1:    11,536 B/s (laptop) | board ms=14048 gaps=0 crc=0 uart_err=0
+   needs 32,650 B/s on the wire; sent 5 s of audio in 14.075 s -> CANNOT keep up
+com  baud=  115200 i8 16k spp=320   speed=1.0  run1:    11,465 B/s (laptop) | board ms=7159 gaps=0 crc=0 uart_err=0
+   needs 16,650 B/s on the wire; sent 5 s of audio in 7.187 s -> CANNOT keep up
+com  baud=  115200 i16 8k spp=320   speed=1.0  run1:    11,426 B/s (laptop) | board ms=7019 gaps=0 crc=0 uart_err=0
+   needs 16,325 B/s on the wire; sent 5 s of audio in 7.068 s -> CANNOT keep up
+com  baud=  115200 i8 8k spp=320   speed=1.0  run1:     8,156 B/s (laptop) | board ms=4980 gaps=0 crc=0 uart_err=0
+   needs 8,325 B/s on the wire; sent 5 s of audio in 5.028 s -> CARRIES it
+
+C:\...>python m1_pipe.py realtime --port COM3 --label com --baud 921600
+com  baud=  921600 f32 16k spp=320   speed=1.0  run1:    63,824 B/s (laptop) | board ms=4994 gaps=0 crc=0 uart_err=0
+   needs 64,650 B/s on the wire; sent 5 s of audio in 5.015 s -> CARRIES it
+com  baud=  921600 i16 16k spp=320   speed=1.0  run1:    32,280 B/s (laptop) | board ms=4987 gaps=0 crc=0 uart_err=0
+   needs 32,650 B/s on the wire; sent 5 s of audio in 5.008 s -> CARRIES it
+com  baud=  921600 i8 16k spp=320   speed=1.0  run1:    16,477 B/s (laptop) | board ms=4982 gaps=0 crc=0 uart_err=0
+   needs 16,650 B/s on the wire; sent 5 s of audio in 5.004 s -> CARRIES it
+com  baud=  921600 i16 8k spp=320   speed=1.0  run1:    16,145 B/s (laptop) | board ms=4966 gaps=0 crc=0 uart_err=0
+   needs 16,325 B/s on the wire; sent 5 s of audio in 5.008 s -> CARRIES it
+com  baud=  921600 i8 8k spp=320   speed=1.0  run1:     8,238 B/s (laptop) | board ms=4963 gaps=0 crc=0 uart_err=0
+   needs 8,325 B/s on the wire; sent 5 s of audio in 5.004 s -> CARRIES it
+
+C:\...>python m1_pipe.py realtime --port COM3 --label com --baud 2000000
+com  baud= 2000000 f32 16k spp=320   speed=1.0  run1:    63,949 B/s (laptop) | board ms=4986 gaps=0 crc=0 uart_err=0
+   needs 64,650 B/s on the wire; sent 5 s of audio in 5.008 s -> CARRIES it
+com  baud= 2000000 i16 16k spp=320   speed=1.0  run1:    32,317 B/s (laptop) | board ms=4983 gaps=0 crc=0 uart_err=0
+   needs 32,650 B/s on the wire; sent 5 s of audio in 5.005 s -> CARRIES it
+com  baud= 2000000 i8 16k spp=320   speed=1.0  run1:    16,489 B/s (laptop) | board ms=4981 gaps=0 crc=0 uart_err=0
+   needs 16,650 B/s on the wire; sent 5 s of audio in 5.003 s -> CARRIES it
+com  baud= 2000000 i16 8k spp=320   speed=1.0  run1:    16,164 B/s (laptop) | board ms=4963 gaps=0 crc=0 uart_err=0
+   needs 16,325 B/s on the wire; sent 5 s of audio in 5.004 s -> CARRIES it
+com  baud= 2000000 i8 8k spp=320   speed=1.0  run1:     8,246 B/s (laptop) | board ms=4961 gaps=0 crc=0 uart_err=0
+   needs 8,325 B/s on the wire; sent 5 s of audio in 5.003 s -> CARRIES it
+
+C:\...>python m1_pipe.py packets --port COM3 --label com --baud 921600
+com  baud=  921600 i16 16k spp=8     speed=0    run0:    92,100 B/s (laptop) | board ms=6248 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=8     speed=0    run1:    92,074 B/s (laptop) | board ms=6250 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=8     speed=0    run2:    92,161 B/s (laptop) | board ms=6244 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=8     speed=0    run3:    92,148 B/s (laptop) | board ms=6246 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=64    speed=0    run0:    91,567 B/s (laptop) | board ms=3801 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=64    speed=0    run1:    91,552 B/s (laptop) | board ms=3800 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=64    speed=0    run2:    91,180 B/s (laptop) | board ms=3817 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=64    speed=0    run3:    91,727 B/s (laptop) | board ms=3794 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run0:    89,581 B/s (laptop) | board ms=3595 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run1:    89,649 B/s (laptop) | board ms=3593 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run2:    89,160 B/s (laptop) | board ms=3612 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=320   speed=0    run3:    89,076 B/s (laptop) | board ms=3615 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=1024  speed=0    run0:    90,498 B/s (laptop) | board ms=3508 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=1024  speed=0    run1:    90,759 B/s (laptop) | board ms=3498 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=1024  speed=0    run2:    90,792 B/s (laptop) | board ms=3497 gaps=0 crc=0 uart_err=0
+com  baud=  921600 i16 16k spp=1024  speed=0    run3:    90,639 B/s (laptop) | board ms=3504 gaps=0 crc=0 uart_err=0
+
+C:\...>python m2_storage.py sram --port COM3
+INFO: {'cpu_mhz': 240, 'heap_free': 287868, 'heap_largest': 233460, 'psram_size': 8388608, 'psram_free': 8350688, 'psram_largest': 8257524, 'flash_chip': 16777216, 'fs_total': 10354688, 'fs_used': 8192, 'stored': 0, 'where': 'none'}
+largest free internal block: 233,460 bytes
+largest SRAM store the board accepts: 233,380 bytes
+  16 kHz f32:   3.65 s of audio
+  16 kHz i16:   7.29 s of audio
+  16 kHz i8:  14.59 s of audio
+   8 kHz i16:  14.59 s of audio
+   8 kHz i8:  29.17 s of audio
+stored: 116690 of 116690 store_full: 0
+CRC board: {'where': 'sram', 'n': 116690, 'crc': '790706d7'}  laptop: 790706d7
+
+C:\...>python m2_storage.py psram --port COM3
+INFO: {'cpu_mhz': 240, 'heap_free': 162596, 'heap_largest': 112628, 'psram_size': 8388608, 'psram_free': 8350688, 'psram_largest': 8257524, 'flash_chip': 16777216, 'fs_total': 10354688, 'fs_used': 8192, 'stored': 116690, 'where': 'sram'}
+  all 144 clips, 16 kHz f32: need  9,216,000 B -> ERR alloc psram want=9216000 largest=8257524
+  all 144 clips, 16 kHz i16: need  4,608,000 B -> OK cap=4608000
+  all 144 clips, 16 kHz i8: need  2,304,000 B -> OK cap=2304000
+  all 144 clips, 8 kHz i16: need  2,304,000 B -> OK cap=2304000
+
+C:\...>python m2_storage.py send --port COM3
+payload 4,608,000 bytes, crc32 f702a9e3
+board summary: {'why': 'end', 'frames_ok': 7201, 'bad_crc': 0, 'bad_len': 0, 'seq_gaps': 0, 'dup': 0, 'samples': 2304000, 'stored': 4608000, 'where': 'psram', 'store_full': 0, 'features': 0, 'max_us': 0, 'avg_us': 0, 'uart_errors': 0, 'ms': 51716}
+psram CRC: {'where': 'psram', 'n': 4608000, 'crc': 'f702a9e3'}
+save: {'n': 4608000, 'us': 10208845, 'crc': 'f702a9e3'}
+flash CRC: {'where': 'flash', 'n': 4608000, 'crc': 'f702a9e3'}
+info: {'cpu_mhz': 240, 'heap_free': 276880, 'heap_largest': 229364, 'psram_size': 8388608, 'psram_free': 3632092, 'psram_largest': 3538932, 'flash_chip': 16777216, 'fs_total': 10354688, 'fs_used': 4628480, 'stored': 4608000, 'where': 'psram'}
+
+(board unplugged for 10 s and plugged back in)
+
+C:\...>python m2_storage.py check --port COM3
+sent crc32 f702a9e3, 4,608,000 bytes
+psram: {'where': 'psram', 'n': 0, 'crc': '00000000'}  (after a power cut this should be n=0: RAM forgets)
+flash: {'where': 'flash', 'n': 4608000, 'crc': 'f702a9e3'}
+dump: 4,608,000 bytes, crc32 f702a9e3, identical to what was sent: True
+
+
+MISSION 3 – USB SPEED TESTS (COM11)
+
+Speed 1x:
+Features OFF: 501 frames, 0 errors.
+Features ON: 499 feature frames, 0 lost, average compute 1648 us.
+
+Speed 2x:
+Features OFF: 501 frames, 0 errors.
+Features ON: 499 feature frames, 0 lost, average compute 1648 us.
+
+Speed 4x:
+Features OFF: 501 frames, 0 errors.
+Features ON: 499 feature frames, 0 lost, average compute 1745 us.
+
+Speed 5x:
+Features OFF: 501 frames, 0 errors.
+Features ON: 405 feature frames, 94 lost, 47 CRC errors.
+
+Speed 6x:
+Features OFF: 501 frames, 0 errors.
+Features ON: 294 feature frames, 205 lost, 102 CRC errors.
+
+MISSION 3 – DFT vs OPTIMISED FFT
+
+Original DFT:
+Median compute time: 1,855,732 us
+Maximum compute time: 1,873,988 us
+Feature frames received: 16 / 499
+Lost feature frames: 483
+
+Optimised FFT:
+Median compute time: 1,655 us
+Maximum compute time: 1,834 us
+Feature frames received: 499 / 499
+Lost feature frames: 0
+
+The optimised FFT was approximately 1,121 times faster by median
+compute time. Original DFT measurements were taken in an earlier
+terminal test; optimised FFT measurements were taken after the
+FFT changes.

@@ -1,0 +1,28 @@
+MISSION 3 HANDOVER – TEAM 6
+
+Mission 3 implementation and testing are completed.
+
+Files included:
+- m3_report.txt
+- team_06_mission3_report.pdf
+- m3_features.py
+- m3_baseline.py
+- m3_plots.py
+- m3_speed_test.py
+- m3_notes.txt
+- measurements_log.txt
+- llm_log.txt
+- figs/m3_logmel.png
+- doorbell_board_starter/doorbell_board_starter.ino
+- doorbell_board_starter/features.h
+- doorbell_board_starter/features_original.h
+
+Main results:
+- Original DFT median computation time: 1,855,732 us.
+- Optimised FFT median computation time: approximately 1,655 us.
+- Optimised FFT worst difference from NumPy: 0.0001 dB.
+- 400-sample window and 160-sample hop test completed.
+- 13 MFCC coefficient test completed.
+- COM and USB speed tests completed.
+
+Mission 3 files, code and measurements are ready for handover to Mission 4.

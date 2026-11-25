@@ -1,0 +1,15 @@
+## Mission 3 – Step 8: Prediction
+
+Before testing the changed window and hop settings:
+
+- Window size: 400 samples
+- Hop size: 160 samples
+- FFT size: 512
+- Mel bands: 40
+- Predicted compute time: approximately 1,700 µs per frame
+- Frame budget: 10,000 µs
+- Expected feature frames: 998
+- Expected bytes per frame: 181
+- Expected data rate: 18,100 bytes/second
+
+These are predictions and will be compared with the actual measurements.
